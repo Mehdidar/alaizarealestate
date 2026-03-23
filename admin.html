@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AIZA | Admin Intelligence Portfolio</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Questrial&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --highlight: #00f3c0;
+            --bg-dark: #070707;
+            --card-gray: #111111;
+            --border: rgba(255,255,255,0.05);
+            --font-main: 'Inter', sans-serif;
+            --font-headings: 'Questrial', sans-serif;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: var(--bg-dark);
+            color: #fff;
+            font-family: var(--font-main);
+            min-height: 100vh;
+            /* Background Grid to match index.html */
+            background-image: radial-gradient(circle at 2px 2px, rgba(0, 243, 192, 0.05) 1px, transparent 0);
+            background-size: 40px 40px;
+        }
+
+        .admin-layout {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        /* DASHBOARD HEADER */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 60px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .brand-admin {
+            font-family: var(--font-headings);
+            font-size: 1.5rem;
+            letter-spacing: 2px;
+        }
+
+        .status-dot {
+            width: 8px; height: 8px; border-radius: 50%; background: var(--highlight);
+            display: inline-block; margin-right: 10px;
+            box-shadow: 0 0 10px var(--highlight);
+        }
+
+        /* STATS CARDS */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .stat-card {
+            background: var(--card-gray);
+            border: 1px solid var(--border);
+            padding: 30px;
+            border-radius: 2px;
+            transition: 0.3s ease;
+        }
+
+        .stat-card:hover { border-color: rgba(0, 243, 192, 0.3); }
+
+        .stat-label { font-size: 11px; color: rgba(255,255,255,0.4); letter-spacing: 2px; text-transform: uppercase; }
+        .stat-value { font-family: var(--font-headings); font-size: 32px; color: var(--highlight); margin-top: 10px; }
+
+        /* DATA TABLE */
+        .dashboard-main {
+            background: var(--card-gray);
+            border: 1px solid var(--border);
+            border-radius: 2px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        }
+
+        .table-controls {
+            padding: 20px;
+            background: rgba(255,255,255,0.02);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        table { width: 100%; border-collapse: collapse; text-align: left; }
+        th { 
+            padding: 20px; 
+            font-size: 11px; 
+            text-transform: uppercase; 
+            letter-spacing: 1px; 
+            color: rgba(255,255,255,0.4); 
+            border-bottom: 1px solid var(--border);
+        }
+        td { 
+            padding: 20px; 
+            font-size: 14px; 
+            border-bottom: 1px solid var(--border);
+            color: rgba(255,255,255,0.8);
+        }
+
+        tr:hover td { background: rgba(0, 243, 192, 0.02); color: #fff; }
+
+        .tag {
+            background: rgba(255,255,255,0.05);
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 11px;
+            color: var(--highlight);
+        }
+
+        .img-link { color: var(--highlight); text-decoration: none; font-size: 12px; }
+        .img-link:hover { text-decoration: underline; }
+
+        /* UTILS */
+        .loader { 
+            padding: 100px; text-align: center; font-size: 12px; 
+            color: var(--highlight); letter-spacing: 2px; 
+        }
+
+        @media (max-width: 991px) {
+            .table-wrap { overflow-x: auto; }
+            table { min-width: 800px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="admin-layout">
+        <header>
+            <div class="brand-admin">AIZA <span style="color:var(--highlight);">INTEL</span></div>
+            <div style="font-size: 11px; letter-spacing: 1px;">
+                <span class="status-dot"></span> SECURE ADMIN CONSOLE
+            </div>
+        </header>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-label">Total Inquiries</div>
+                <div class="stat-value" id="total-count">...</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Active Portfolio Interest</div>
+                <div class="stat-value" id="top-interest">...</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">System Performance</div>
+                <div class="stat-value" style="color:#fff;">99.9%</div>
+            </div>
+        </div>
+
+        <div class="dashboard-main">
+            <div class="table-controls">
+                <div style="font-size: 13px; font-weight: 500;">Recent Real Estate Inquiries</div>
+                <button onclick="fetchData()" style="background:transparent; border:1px solid rgba(255,255,255,0.1); color:#fff; padding:8px 15px; cursor:pointer;" onmouseover="this.style.borderColor='var(--highlight)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.1)'">Refresh Hub</button>
+            </div>
+            <div class="table-wrap">
+                <table id="inquiryTable">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Lead Name</th>
+                            <th>Contact</th>
+                            <th>Interested In</th>
+                            <th>Property Asset</th>
+                            <th>Message</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                        <tr>
+                            <td colspan="6" class="loader">SYNCHRONIZING SECURE DATABASE...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const pass = urlParams.get('pass');
+
+        async function fetchData() {
+            try {
+                const res = await fetch(`/api/inquiries?pass=${pass}`);
+                if (!res.ok) throw new Error('Unauthorized');
+                const data = await res.json();
+                
+                renderTable(data);
+                updateStats(data);
+            } catch (err) {
+                document.getElementById('tableBody').innerHTML = `<tr><td colspan="6" style="padding:100px; text-align:center; color:#ff4d4d;">ACCESS DENIED: Please use direct encrypted link.</td></tr>`;
+            }
+        }
+
+        function renderTable(data) {
+            const body = document.getElementById('tableBody');
+            body.innerHTML = '';
+
+            data.forEach(item => {
+                const date = new Date(item.submitted_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${date}</td>
+                    <td style="font-weight:600; color:#fff;">${item.name}</td>
+                    <td>${item.email}<br><span style="color:rgba(255,255,255,0.3)">${item.phone || '-'}</span></td>
+                    <td><span class="tag">${item.interest}</span></td>
+                    <td>
+                        ${item.image_path ? `<a href="/${item.image_path}" target="_blank" class="img-link">View Photo</a>` : '<span style="color:rgba(255,255,255,0.2)">N/A</span>'}
+                    </td>
+                    <td style="max-width:300px; font-size:12px; line-height:1.6;">${item.message}</td>
+                `;
+                body.appendChild(row);
+            });
+        }
+
+        function updateStats(data) {
+            document.getElementById('total-count').innerText = data.length;
+            
+            const interests = data.map(i => i.interest);
+            const mostFrequent = interests.sort((a,b) =>
+                interests.filter(v => v===a).length - interests.filter(v => v===b).length
+            ).pop() || "None";
+            
+            document.getElementById('top-interest').innerText = mostFrequent;
+        }
+
+        fetchData();
+    </script>
+</body>
+</html>
