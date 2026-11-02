@@ -188,19 +188,29 @@
     </div>
 
     <script>
-        const urlParams = new URLSearchParams(window.location.search);
-        const pass = urlParams.get('pass');
+        function getPass() {
+            let pass = null;
+            try { pass = sessionStorage.getItem('adminPass'); } catch (e) {}
+            if (!pass) {
+                pass = prompt('Enter the admin passcode');
+                try { if (pass) sessionStorage.setItem('adminPass', pass); } catch (e) {}
+            }
+            return pass || '';
+        }
 
         async function fetchData() {
             try {
-                const res = await fetch(`/api/inquiries?pass=${pass}`);
-                if (!res.ok) throw new Error('Unauthorized');
+                const res = await fetch('/api/inquiries', { headers: { 'x-admin-pass': getPass() } });
+                if (!res.ok) {
+                    try { sessionStorage.removeItem('adminPass'); } catch (e) {}
+                    throw new Error('Unauthorized');
+                }
                 const data = await res.json();
                 
                 renderTable(data);
                 updateStats(data);
             } catch (err) {
-                document.getElementById('tableBody').innerHTML = `<tr><td colspan="6" style="padding:100px; text-align:center; color:#ff4d4d;">ACCESS DENIED: Please use direct encrypted link.</td></tr>`;
+                document.getElementById('tableBody').innerHTML = `<tr><td colspan="6" style="padding:100px; text-align:center; color:#ff4d4d;">ACCESS DENIED: wrong passcode. Reload the page to try again.</td></tr>`;
             }
         }
 

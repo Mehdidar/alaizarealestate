@@ -60,7 +60,13 @@ db.serialize(() => {
 // 2. Middlewares
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
-app.use(express.static(path.join(__dirname)));
+// Never serve server-side files (database, source, config) as public static files
+const BLOCKED_PATHS = /^\/(inquiries\.db|server\.js|package(-lock)?\.json|node_modules|admin\.html)(\/|$)/i;
+app.use((req, res, next) => {
+    if (BLOCKED_PATHS.test(req.path) || req.path.endsWith('.db')) return res.status(404).end();
+    next();
+});
+app.use(express.static(path.join(__dirname), { dotfiles: 'deny' }));
 app.use('/uploads', express.static(uploadDir));
 
 // 3. Email Transporter Setup
@@ -124,21 +130,26 @@ app.post('/api/inquiry', upload.single('image'), async (req, res) => {
     });
 });
 
-// 5. Admin Routes (Simple Passcode Protection)
-const ADMIN_PASS = process.env.ADMIN_PASS || 'aiza2026';
+// 5. Admin Routes (passcode sent in a header, never in the URL)
+const crypto = require('crypto');
+const ADMIN_PASS = process.env.ADMIN_PASS;
+if (!ADMIN_PASS) console.warn('ADMIN_PASS is not set — the admin dashboard is disabled.');
 
+function isAdmin(req) {
+    const given = req.get('x-admin-pass') || '';
+    if (!ADMIN_PASS || !given) return false;
+    const a = Buffer.from(given), b = Buffer.from(ADMIN_PASS);
+    return a.length === b.length && crypto.timingSafeEqual(a, b);
+}
+
+// The page itself holds no data; it asks for the passcode and calls the API below
 app.get('/admin', (req, res) => {
-    const { pass } = req.query;
-    if (pass !== ADMIN_PASS) {
-        return res.status(403).send('<h1>Access Denied</h1><p>Please provide the correct administrator passcode.</p>');
-    }
     res.sendFile(path.join(__dirname, 'admin.html'));
 });
 
 // 6. Fetch Inquiries API
 app.get('/api/inquiries', (req, res) => {
-    const { pass } = req.query;
-    if (pass !== ADMIN_PASS) return res.status(403).json({ error: "Unauthorized" });
+    if (!isAdmin(req)) return res.status(403).json({ error: "Unauthorized" });
 
     db.all(`SELECT * FROM inquiries ORDER BY submitted_at DESC`, [], (err, rows) => {
         if (err) return res.status(500).json({ error: err.message });
